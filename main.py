@@ -8,21 +8,21 @@ from sklearn.pipeline import Pipeline
 from keras.models import Sequential
 from keras.layers import Dropout, Dense
 from keras.optimizers import SGD
-from keras.constraints import  maxnorm
+from keras.constraints import maxnorm
 from keras.regularizers import l1_l2
 
 
 def keras_model(input_size):
     model = Sequential()
-    model.add(Dropout(0.2, input_shape=(input_size,)))
-    model.add(Dense(200, init='normal', activation='relu', W_constraint=maxnorm(2), W_regularizer=l1_l2(l1=0, l2=1e-4)))
+    model.add(Dense(200, input_shape=(input_size,), init='normal', activation='relu', W_constraint=maxnorm(2),
+                    W_regularizer=l1_l2(l1=0, l2=1e-4)))
     model.add(Dropout(0.2))
     model.add(Dense(120, init='normal', activation='relu', W_constraint=maxnorm(2), W_regularizer=l1_l2(l1=0, l2=1e-4)))
     model.add(Dropout(0.2))
-    model.add(Dense(1, init='normal', activation='sigmoid'))
+    model.add(Dense(1, init='normal', activation='relu'))
     # Compile model
     sgd = SGD(lr=0.005, momentum=0.9, decay=0.0, nesterov=True)
-    model.compile(loss='binary_crossentropy', optimizer=sgd, metrics=['accuracy'])
+    model.compile(loss='mse', optimizer=sgd)
     return model
 
 
@@ -37,4 +37,3 @@ x_train, y_train, x_test, y_test = train_test_split(x, y, shuffle=True, train_si
 xgbr = xgb.XGBRegressor()
 nn = KerasRegressor(build_fn=keras_model, input_size=x_train.shape[1])
 svcr = BaggingRegressor(base_estimator=SVC(), n_estimators=10, max_samples=0.1)
-
