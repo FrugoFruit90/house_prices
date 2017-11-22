@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
@@ -13,12 +14,13 @@ from keras.regularizers import l1_l2
 from sklearn.metrics import mean_squared_error
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from utils import ModelTransformer
+from utils import ModelTransformer, make_keras_picklable
 from sklearn.linear_model import LinearRegression
 import dill as pickle
 
 
 def keras_model(input_size):
+    make_keras_picklable()
     model = Sequential()
     model.add(Dense(200, input_shape=(input_size,), kernel_initializer='normal', activation='relu',
                     kernel_constraint=maxnorm(2),
@@ -63,6 +65,8 @@ print(mean_squared_error(y_pred_pipeline, y_test))
 s = pickle.dumps(pipeline)
 clf2 = pickle.loads(s)
 
+y_pred_pickle = clf2.predict(x_test)
+print(mean_squared_error(y_pred_pickle, y_test))
 
 # xgbr.fit(x_train, y_train)
 # nn.fit(x_train, y_train)
