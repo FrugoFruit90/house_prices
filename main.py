@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.ensemble import BaggingRegressor
 from sklearn.svm import SVR
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline, FeatureUnion
 from keras.models import Sequential
 from keras.layers import Dropout, Dense
 from keras.optimizers import SGD
@@ -13,6 +13,9 @@ from keras.regularizers import l1_l2
 from sklearn.metrics import mean_squared_error
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from utils import ModelTransformer
+from sklearn.linear_model import LinearRegression
+import dill as pickle
 
 
 def keras_model(input_size):
@@ -46,14 +49,29 @@ xgbr = xgb.XGBRegressor()
 nn = KerasRegressor(build_fn=keras_model, input_size=x_train.shape[1])
 svcr = BaggingRegressor(base_estimator=SVR(), n_estimators=10, max_samples=0.1)
 
-xgbr.fit(x_train, y_train)
-nn.fit(x_train, y_train)
-svcr.fit(x_train, y_train)
+pipeline = Pipeline([
+    ('models', FeatureUnion([('xgb', ModelTransformer(xgbr)),
+                             ('nn', ModelTransformer(nn)),
+                             ('svm', ModelTransformer(svcr))])),
+    ('voting', LinearRegression())
 
-y_pred_xgb = xgbr.predict(x_test)
-y_pred_nn = nn.predict(x_test)
-y_pred_svcr = svcr.predict(x_test)
+])
+pipeline.fit(x_train, y_train)
+y_pred_pipeline = pipeline.predict(x_test)
+print(mean_squared_error(y_pred_pipeline, y_test))
 
-print(mean_squared_error(y_pred_xgb, y_test))
-print(mean_squared_error(y_pred_nn, y_test))
-print(mean_squared_error(y_pred_svcr, y_test))
+s = pickle.dumps(pipeline)
+clf2 = pickle.loads(s)
+
+
+# xgbr.fit(x_train, y_train)
+# nn.fit(x_train, y_train)
+# svcr.fit(x_train, y_train)
+#
+# y_pred_xgb = xgbr.predict(x_test)
+# y_pred_nn = nn.predict(x_test)
+# y_pred_svcr = svcr.predict(x_test)
+#
+# print(mean_squared_error(y_pred_xgb, y_test))
+# print(mean_squared_error(y_pred_nn, y_test))
+# print(mean_squared_error(y_pred_svcr, y_test))
