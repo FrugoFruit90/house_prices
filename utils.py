@@ -7,6 +7,7 @@ import tempfile
 import keras.models
 
 
+# following http://zachmoshe.com/2017/04/03/pickling-keras-models.html 
 def make_keras_picklable():
     def __getstate__(self):
         model_str = ""
